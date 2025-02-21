@@ -5,7 +5,8 @@ const DeviceSchema = require("./device-id-schema")
 const UserSchema = require("./users-schema")
 const userSchema = require("./users-schema")
 const deviceInfoSchema = require("./device-info-schema")
-const PORT = process.env.PORT
+const os = require("os");
+const PORT = 8000
 
 const app = express();
 
@@ -15,8 +16,7 @@ app.listen(PORT, () => {
 })
 //Connecting the MongoDB Server
 const db = mongoose.connect('mongodb+srv://Varun:Varun9999@wifi-server.kvwhr.mongodb.net/?retryWrites=true&w=majority&appName=Wifi-Server/Wifi-Module', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
+
   dbName: 'Wifi-Module' // Ensure this is set.
 })
 .then(() => console.log('Connected to wifi-module database'))
@@ -41,7 +41,9 @@ app.get("/users", async (req, res) => {
 
 });
 
-
+app.get("/cpu", (req,res)=>{
+  res.send(`The Number of CPUS is : ${os.cpus().length}`)
+})
 app.get("/data", async (req, res) => {
   const deviceName = req.query.device.toString();
   var queryDate = new Date(req.query.date.split("-").reverse().join("-").toString());
@@ -90,6 +92,22 @@ app.post("/upload", (req, res) => {
   else {
     console.log("Entry Wasn't Saved!")
   }
+})
+app.get("/upload", (req, res) => {
+  console.log(req.query)
+  if (req.query.time != "." && !req.query.date.startsWith("??")) {
+    try {
+
+      saveInfo(req.query)
+    }
+    catch (e) {
+      console.log("Unable To Save Info" + e.message)
+    }
+  }
+  else {
+    console.log("Entry Wasn't Saved!")
+  }
+  res.send("OK")
 })
 
 
