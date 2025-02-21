@@ -42,7 +42,8 @@ app.get("/users", async (req, res) => {
 });
 
 app.get("/cpu", (req,res)=>{
-  res.send(`The Number of CPUS is : ${os.cpus().length}`)
+
+  res.send(`The Number of CPUS is : ${os.cpus()}`)
 })
 app.get("/data", async (req, res) => {
   const deviceName = req.query.device.toString();
