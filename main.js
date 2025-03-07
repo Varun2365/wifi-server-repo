@@ -42,7 +42,7 @@ app.get("/users", async (req, res) => {
 });
 
 app.get("/cpu", (req,res)=>{
-
+  console.log(os.platform())
   res.send(`The Number of CPUS is : ${os.cpus()}`)
 })
 app.get("/data", async (req, res) => {
@@ -95,7 +95,8 @@ app.post("/upload", (req, res) => {
   }
 })
 app.get("/upload", (req, res) => {
-  console.log(req.query)
+  console.log("Request AAIII")
+  console.log(req.query);
   if (req.query.time != "." && !req.query.date.startsWith("??")) {
     try {
 
@@ -108,7 +109,7 @@ app.get("/upload", (req, res) => {
   else {
     console.log("Entry Wasn't Saved!")
   }
-  res.send("OK")
+  res.send("EXPRESS")
 })
 
 
