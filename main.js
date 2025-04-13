@@ -16,7 +16,7 @@ app.listen(PORT, () => {
 })
 //Connecting the MongoDB Server
 const db = mongoose.connect('mongodb+srv://Varun:Varun9999@wifi-server.kvwhr.mongodb.net/?retryWrites=true&w=majority&appName=Wifi-Server/Wifi-Module', {
-  
+
   dbName: 'Wifi-Module' // Ensure this is set.
 })
 .then(() => console.log('Connected to wifi-module database'))
@@ -41,6 +41,12 @@ app.get("/users", async (req, res) => {
 
 });
 
+app.get("/cpu", (req,res)=>{
+  console.log(os.platform())
+  res.send(`The Number of CPUS is : ${os.cpus()}`)
+
+  res.send(`The Number of CPUS is : ${os.cpus()[0].model}`)
+})
 app.get("/data", async (req, res) => {
   const deviceName = req.query.device.toString();
   var queryDate = new Date(req.query.date.split("-").reverse().join("-").toString());
@@ -91,9 +97,9 @@ app.post("/upload", (req, res) => {
   }
 })
 app.get("/upload", (req, res) => {
-
+  console.log("Request AAIII")
   console.log(req.query);
-  if (req.query.time != "." && !req.query.date.startsWith("??") && req.query.time.length != 0 && req.query.date.length != 0) {
+  if (req.query.time != "." && !req.query.date.startsWith("??")) {
     try {
 
       saveInfo(req.query)
@@ -105,7 +111,7 @@ app.get("/upload", (req, res) => {
   else {
     console.log("Entry Wasn't Saved!")
   }
-  res.send("Data Uploaded")
+  res.send("EXPRESS")
 })
 
 
@@ -280,10 +286,7 @@ app.get('/users/data', async (req, res) => {
         res.send({
           validResponse : true,
           message : "Data Retrived",
-          data : {
-            name : user.name,
-            devices : user.devices
-          }
+          data : user.devices
         })
       }
     }catch(e){
@@ -305,102 +308,21 @@ app.get('/createDevice',(req,res)=>{
   }
 })
 function saveInfo(data) {
-  try {
-    const currentDevice = mongoose.model(data.deviceid, DeviceSchema, data.deviceid);
-    const rDate = data.date;
-    const rTime = data.time;
+  const currentDevice = mongoose.model(data.deviceid, DeviceSchema, data.deviceid);
+  const rDate = data.date;
+  const rTime = data.time;
 
-    const dateParts = rDate.split("/");
-    const timeParts = rTime.split(":"); // Assuming rTime will be like "9:00" or "09:00"
-
-    let day, month, year, hours, minutes, seconds;
-
-    if (dateParts.length === 3) {
-      [day, month, year] = dateParts.map(Number);
-    } else {
-      console.error(`Invalid date format: ${rDate}. Skipping save.`);
-      return;
-    }
-
-    if (timeParts.length >= 2) {
-      hours = parseInt(timeParts[0]);
-      minutes = parseInt(timeParts[1]);
-      seconds = timeParts.length > 2 ? parseInt(timeParts[2]) : 0; // Default seconds to 0 if not provided
-    } else {
-      console.warn(`Invalid time format: ${rTime}. Setting time to 00:00:00.`);
-      hours = 0;
-      minutes = 0;
-      seconds = 0;
-    }
-
-    // Basic validation for date and 12-hour time components
-    if (
-      isNaN(year) || isNaN(month) || isNaN(day) || isNaN(hours) || isNaN(minutes) || isNaN(seconds) ||
-      month < 1 || month > 12 ||
-      day < 1 || day > new Date(year, month, 0).getDate() ||
-      hours < 1 || hours > 12 || // Incoming time is 1-12
-      minutes < 0 || minutes > 59 ||
-      seconds < 0 || seconds > 59
-    ) {
-      console.error(`Invalid date or 12-hour time components: Date=${rDate}, Time=${rTime}. Skipping save.`);
-      return;
-    }
-
-    // Get the current Indian time to determine AM/PM
-    const nowInIndia = new Date();
-    const currentHourInIndia = nowInIndia.getHours(); // 0-23
-
-    // Adjust the incoming hour to 24-hour format based on current Indian time
-    let adjustedHours = hours;
-    if (currentHourInIndia >= 12 && currentHourInIndia < 24 && hours !== 12) {
-      adjustedHours += 12;
-    } else if (currentHourInIndia < 12 && hours === 12) {
-      adjustedHours = 0; // Midnight case
-    }
-
-    let dateTimeObject = new Date(year, month - 1, day, adjustedHours, minutes, seconds);
-
-    // Check if the created Date object is valid
-    if (isNaN(dateTimeObject.getTime())) {
-      console.error(`Could not create a valid Date object from: Date=${rDate}, Time=${rTime} (adjusted to ${adjustedHours}:${minutes}:${seconds}). Skipping save.`);
-      return;
-    }
-
-    const IST_OFFSET = 5.5 * 60 * 60 * 1000;
-    const istDateTimeObject = new Date(dateTimeObject.getTime() + IST_OFFSET);
-
-    // Format the time in AM/PM for storage (optional, but good for display)
-    let ampmHours = hours;
-    const ampm = currentHourInIndia >= 12 ? 'PM' : 'AM';
-    ampmHours = ampmHours % 12;
-    ampmHours = ampmHours ? ampmHours : 12;
-    const ampmMinutes = minutes.toString().padStart(2, '0');
-    const ampmSeconds = seconds.toString().padStart(2, '0');
-    const formattedTimeAMPM = `${ampmHours}:${ampmMinutes}:${ampmSeconds} ${ampm}`;
-
-    currentDevice.create({
-      weight: data.weight,
-      sno: parseInt(data['s.no.']),
-      dateTime: istDateTimeObject, // Store the calculated 24-hour format in IST
-      timeAMPM: formattedTimeAMPM // Store the AM/PM format (based on the assumption)
-    });
-
-  } catch (error) {
-    console.error("Error in saveInfo function:", error.message);
-  }
+  const [day, month, year] = rDate.split("/").map(Number);
+  const [hours, minutes, seconds] = rTime.split(":").map(Number);
+  let dateTimeObject = new Date(year, month - 1, day, hours, minutes, seconds);
+  const IST_OFFSET = 5.5 * 60 * 60 * 1000;
+  dateTimeObject = new Date(dateTimeObject.getTime() + IST_OFFSET);
+  currentDevice.create({
+    weight: data.weight,
+    sno: parseInt(data['s.no.']),
+    dateTime: dateTimeObject
+  })
 }
-
-function getNextDay(date) {
-  try {
-    const nextDate = new Date(date);
-    nextDate.setDate(date.getDate() + 1);
-    return nextDate;
-  } catch (error) {
-    console.error("Error in getNextDay function:", error.message);
-    return null; // Or some other appropriate error indicator
-  }
-}
-
 
 function getNextDay(date) {
   const nextDate = new Date(date);
